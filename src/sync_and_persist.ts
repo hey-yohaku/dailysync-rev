@@ -1,4 +1,5 @@
-import { getGaminCNClient, getGaminGlobalClient, syncGarminCNActivities2GarminGlobal } from './utils/garmin_cn';
+import { getGaminCNClient, syncGarminCNActivities2GarminGlobal } from './utils/garmin_cn';
+import { getGaminGlobalClient } from './utils/garmin_global';
 import { getSessionFromDB, initDB, saveSessionToDB, updateSessionToDB } from './utils/sqlite';
 
 const core = require('@actions/core');
