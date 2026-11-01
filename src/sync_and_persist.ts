@@ -1,6 +1,7 @@
 import { getGaminCNClient, syncGarminCNActivities2GarminGlobal } from './utils/garmin_cn';
 import { getGaminGlobalClient } from './utils/garmin_global';
 import { getSessionFromDB, initDB, saveSessionToDB, updateSessionToDB } from './utils/sqlite';
+import { notifyTelegram } from './utils/notify';
 
 const core = require('@actions/core');
 
@@ -48,7 +49,9 @@ const main = async () => {
     }
 };
 
-main().catch((error) => {
-    core.setFailed(error?.message ?? String(error));
+main().catch(async (error) => {
+    const message = error?.message ?? String(error);
+    await notifyTelegram(`❌ Garmin CN -> Global 同步失败\n${message}`);
+    core.setFailed(message);
     process.exit(1);
 });
