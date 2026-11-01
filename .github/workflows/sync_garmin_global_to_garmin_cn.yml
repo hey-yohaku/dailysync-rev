@@ -32,6 +32,11 @@ env:
   GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
   GARMIN_GLOBAL_USERNAME: ${{ secrets.GARMIN_GLOBAL_USERNAME }}
   GARMIN_GLOBAL_PASSWORD: ${{ secrets.GARMIN_GLOBAL_PASSWORD }}
+  # 复用本地登录得到的 OAuth 会话，Actions 里不再调用佳明登录接口（避免 429）
+  GARMIN_CN_OAUTH1: ${{ secrets.GARMIN_CN_OAUTH1 }}
+  GARMIN_CN_OAUTH2: ${{ secrets.GARMIN_CN_OAUTH2 }}
+  GARMIN_GLOBAL_OAUTH1: ${{ secrets.GARMIN_GLOBAL_OAUTH1 }}
+  GARMIN_GLOBAL_OAUTH2: ${{ secrets.GARMIN_GLOBAL_OAUTH2 }}
   # Wellness 健康数据默认关闭；需要同步步数、睡眠、HRV、压力等数据时，在 Secrets 中设置 GARMIN_SYNC_WELLNESS=true
   GARMIN_SYNC_WELLNESS: ${{ secrets.GARMIN_SYNC_WELLNESS }}
   # 日常同步时检查最近几天的健康数据；未配置时默认为 1
@@ -41,8 +46,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Sync Garmin Global to Garmin CN
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -52,6 +55,3 @@ jobs:
       - run: yarn
       - run: yarn ${{ github.event.inputs.sync_command || 'sync_global' }}
         timeout-minutes: 15
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Save Garmin Session

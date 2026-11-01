@@ -22,6 +22,11 @@ env:
   GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
   GARMIN_GLOBAL_USERNAME: ${{ secrets.GARMIN_GLOBAL_USERNAME }}
   GARMIN_GLOBAL_PASSWORD: ${{ secrets.GARMIN_GLOBAL_PASSWORD }}
+  # 复用本地登录得到的 OAuth 会话，Actions 里不再调用佳明登录接口（避免 429）
+  GARMIN_CN_OAUTH1: ${{ secrets.GARMIN_CN_OAUTH1 }}
+  GARMIN_CN_OAUTH2: ${{ secrets.GARMIN_CN_OAUTH2 }}
+  GARMIN_GLOBAL_OAUTH1: ${{ secrets.GARMIN_GLOBAL_OAUTH1 }}
+  GARMIN_GLOBAL_OAUTH2: ${{ secrets.GARMIN_GLOBAL_OAUTH2 }}
   GARMIN_MIGRATE_NUM: ${{ secrets.GARMIN_MIGRATE_NUM }}
   GARMIN_MIGRATE_START: ${{ secrets.GARMIN_MIGRATE_START }}
   # Wellness 健康数据默认关闭；需要迁移步数、睡眠、HRV、压力等数据时，在 Secrets 中设置 GARMIN_SYNC_WELLNESS=true
@@ -35,8 +40,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Migrate Garmin Global to Garmin CN
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -45,6 +48,3 @@ jobs:
           cache: 'yarn'
       - run: yarn
       - run: yarn ${{ github.event.inputs.migrate_command || 'migrate_garmin_global_to_cn' }}
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Save Garmin Session
