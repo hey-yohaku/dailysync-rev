@@ -15,6 +15,11 @@ on:
           - sync_global
           - sync_all_global_to_cn
           - sync_wellness_global_to_cn
+      force_fail:
+        description: "仅用于测试通知：勾选后不执行同步，直接失败"
+        required: false
+        default: false
+        type: boolean
   schedule:
     #  每6小时检查一次
     - cron: "0 */6 * * *"
@@ -75,6 +80,10 @@ jobs:
       - run: yarn
       - name: Sync
         run: |
+          if [ "${{ github.event.inputs.force_fail }}" = "true" ]; then
+            echo "force_fail=true，跳过同步直接失败，用于验证通知链路"
+            exit 1
+          fi
           CMD="${{ github.event.inputs.sync_command || 'sync_cn' }}"
           if [ "$CMD" = "sync_cn" ]; then
             yarn ts-node src/sync_and_persist.ts
