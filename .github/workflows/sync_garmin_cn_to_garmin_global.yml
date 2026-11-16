@@ -25,9 +25,7 @@ on:
     # GitHub cron 用 UTC，北京时间 = UTC+8（无夏令时）
     # 09:00 -> 01:00 UTC, 12:00 -> 04:00 UTC, 21:00 -> 13:00 UTC, 00:00 -> 16:00 UTC
     - cron: "0 1,4,13,16 * * *"
-  push:
-    branches:
-      - main
+  # 不再在 push 时同步：推代码不应该顺带跑一次运动数据同步，需要时用 workflow_dispatch 手动触发
 
 env:
   # please change to your own config.
