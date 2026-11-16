@@ -21,8 +21,10 @@ on:
         default: false
         type: boolean
   schedule:
-    #  每6小时检查一次
-    - cron: "0 */6 * * *"
+    # 每天 4 次，北京时间 09:00 / 12:00 / 21:00 / 00:00
+    # GitHub cron 用 UTC，北京时间 = UTC+8（无夏令时）
+    # 09:00 -> 01:00 UTC, 12:00 -> 04:00 UTC, 21:00 -> 13:00 UTC, 00:00 -> 16:00 UTC
+    - cron: "0 1,4,13,16 * * *"
   push:
     branches:
       - main
