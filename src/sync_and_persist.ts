@@ -1,4 +1,4 @@
-import { getGaminCNClient, syncGarminCNActivities2GarminGlobal } from './utils/garmin_cn';
+import { getGaminCNClient, syncAllGarminCN2GarminGlobal, syncGarminCNActivities2GarminGlobal } from './utils/garmin_cn';
 import { getGaminGlobalClient } from './utils/garmin_global';
 import { getSessionFromDB, initDB, saveSessionToDB, updateSessionToDB } from './utils/sqlite';
 import { notifyTelegram } from './utils/notify';
@@ -36,12 +36,17 @@ const persistSession = async (region: 'CN' | 'GLOBAL', client: any) => {
 };
 
 const main = async () => {
+    // sync_cn = 只同步活动；sync_all_cn_to_global = 活动 + 健康数据（健康数据还需 GARMIN_SYNC_WELLNESS=true）
+    const mode = process.argv[2] ?? 'sync_all_cn_to_global';
+    const run = mode === 'sync_cn' ? syncGarminCNActivities2GarminGlobal : syncAllGarminCN2GarminGlobal;
+    console.log(`sync mode: ${mode}`);
+
     await initDB();
     const clientCN = await getGaminCNClient();
     const clientGlobal = await getGaminGlobalClient();
 
     try {
-        await syncGarminCNActivities2GarminGlobal(clientCN, clientGlobal);
+        await run(clientCN, clientGlobal);
     } finally {
         // 失败也要保存：refresh 可能已经发生，丢掉就等于白白消耗了一次轮换
         await persistSession('CN', clientCN);

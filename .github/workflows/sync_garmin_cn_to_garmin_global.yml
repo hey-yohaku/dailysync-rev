@@ -6,7 +6,7 @@ on:
       sync_command:
         description: "同步命令：普通 sync 只同步活动；sync_all 同步活动+Wellness；sync_wellness 只同步 Wellness"
         required: true
-        default: "sync_cn"
+        default: "sync_all_cn_to_global"
         type: choice
         options:
           - sync_cn
@@ -84,13 +84,47 @@ jobs:
             echo "force_fail=true，跳过同步直接失败，用于验证通知链路"
             exit 1
           fi
-          CMD="${{ github.event.inputs.sync_command || 'sync_cn' }}"
-          if [ "$CMD" = "sync_cn" ]; then
-            yarn ts-node src/sync_and_persist.ts
+          CMD="${{ github.event.inputs.sync_command || 'sync_all_cn_to_global' }}"
+          if [ "$CMD" = "sync_cn" ] || [ "$CMD" = "sync_all_cn_to_global" ]; then
+            yarn ts-node src/sync_and_persist.ts "$CMD"
           else
             yarn "$CMD"
           fi
         timeout-minutes: 15
+      - name: Check upstream updates
+        if: always()
+        run: |
+          UP=$(git ls-remote https://github.com/gooin/dailysync-rev.git refs/heads/main | cut -f1)
+          SEEN=$(cat state/upstream_seen_sha 2>/dev/null || true)
+          echo "upstream=${UP:-unreachable} seen=${SEEN:-none}"
+          if [ -z "$UP" ]; then
+            echo "上游不可达，跳过"
+            exit 0
+          fi
+          if [ -z "$SEEN" ]; then
+            echo "首次记录上游版本，不通知"
+            echo "$UP" > state/upstream_seen_sha
+            exit 0
+          fi
+          if [ "$UP" = "$SEEN" ]; then
+            echo "上游没有新提交"
+            exit 0
+          fi
+          echo "$UP" > state/upstream_seen_sha
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "telegram 未配置，跳过通知"
+            exit 0
+          fi
+          curl -sS --max-time 15 -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=📦 dailysync-rev 上游有新提交
+${UP}
+https://github.com/gooin/dailysync-rev/commit/${UP}
+
+合并：cd ~/garmin-dailysync-fork && git fetch upstream && git merge upstream/main && git push" || true
+
       - name: Save state (always, so a rotated refresh token is never lost)
         if: always()
         run: |
